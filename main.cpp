@@ -50,6 +50,7 @@ int main() {
             direction = RIGHT;
         }
 
+        // Movement change
         if (frameCounter % updateRate == 0) {
             switch (direction) {
                 case UP:
