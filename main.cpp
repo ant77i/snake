@@ -18,41 +18,58 @@ int main() {
     const int rows = screenHeight / cellHeight;
     const int cols = screenWidth / cellWidth;
 
-    // Colored square position
-    int coloredRow = 4;
-    int coloredCol = 7;
-    Color squareColor = RED;
+    // Player settings
+    int playerY = 4;
+    int playerX = 7;
+    const int updateRate = 20;
+    Color squareColor = GREEN;
 
-    int cooldown = 0;
+    enum directions {
+        NONE,
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT,
+    };
+
+    directions direction = NONE;
+
+    int frameCounter = 0;
 
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
-        if (cooldown > 0) {
-            cooldown--;
-            continue;;
-        }
-
         // Player movement
         if (IsKeyDown(KEY_UP)) {
-            if (coloredRow > 0) {
-                coloredRow--;
-                cooldown = 10000;
-            }
+            direction = UP;
         } else if (IsKeyDown(KEY_DOWN)) {
-            if (coloredRow < rows - 1) {
-                coloredRow++;
-                cooldown = 10000;
-            }
+            direction = DOWN;
         } else if (IsKeyDown(KEY_LEFT)) {
-            if (coloredCol > 0) {
-                coloredCol--;
-                cooldown = 10000;
-            }
+            direction = LEFT;
         } else if (IsKeyDown(KEY_RIGHT)) {
-            if (coloredCol < cols - 1) {
-                coloredCol++;
-                cooldown = 10000;
+            direction = RIGHT;
+        }
+
+        if (frameCounter % updateRate == 0) {
+            switch (direction) {
+                case UP:
+                    if (playerY <= 0) break;
+                    playerY--;
+                    break;
+                case DOWN:
+                    if (playerY >= rows - 1) break;
+                    playerY++;
+                    break;
+                case LEFT:
+                    if (playerX <= 0) break;
+                    playerX--;
+                    break;
+                case RIGHT:
+                    if (playerX >= cols - 1) break;
+                    playerX++;
+                    break;
+                case NONE:
+                    direction = NONE;
             }
         }
 
@@ -71,10 +88,16 @@ int main() {
         }
 
         // Draw colored square
-        DrawRectangle(coloredCol * cellWidth, coloredRow * cellHeight, cellWidth, cellHeight, squareColor);
+        DrawRectangle(playerX * cellWidth, playerY * cellHeight, cellWidth, cellHeight, squareColor);
 
         // End double buffering
         EndDrawing();
+
+        frameCounter++;
+
+        if (frameCounter >= 60) {
+            frameCounter = 0;
+        }
     }
 
     // De-Initialization
