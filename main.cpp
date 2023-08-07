@@ -1,4 +1,7 @@
 #include <raylib.h>
+#include <iostream>
+#include <random>
+#include <list>
 
 int main() {
     // Initialization
@@ -12,17 +15,28 @@ int main() {
     SetTargetFPS(60); // Set the desired frame rate (60 FPS)
 
     // Grid settings
-    const Color gridColor = DARKGRAY;
     const int cellWidth = 50;
     const int cellHeight = 50;
-    const int rows = screenHeight / cellHeight;
     const int cols = screenWidth / cellWidth;
+    const int rows = screenHeight / cellHeight;
+    const Color gridColor = DARKGRAY;
+
+    // Random setup
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> randomCol(0, 15);
+    std::uniform_int_distribution<> randomRow(0, 11);
 
     // Player settings
-    int playerY = 4;
-    int playerX = 7;
+    int playerX = randomCol(gen);
+    int playerY = randomRow(gen);
     const int updateRate = 20;
     Color squareColor = GREEN;
+
+    // Food settings
+    int foodX = randomCol(gen);
+    int foodY = randomRow(gen);
+    Color foodColor = RED;
 
     enum directions {
         NONE,
@@ -32,6 +46,8 @@ int main() {
         RIGHT,
     };
 
+    std::list<directions> playerBody;
+
     directions direction = NONE;
 
     int frameCounter = 0;
@@ -40,15 +56,17 @@ int main() {
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         // Player movement
-        if (IsKeyDown(KEY_UP)) {
+        if (IsKeyDown(KEY_UP) && direction != DOWN) {
             direction = UP;
-        } else if (IsKeyDown(KEY_DOWN)) {
+        } else if (IsKeyDown(KEY_DOWN) && direction != UP) {
             direction = DOWN;
-        } else if (IsKeyDown(KEY_LEFT)) {
+        } else if (IsKeyDown(KEY_LEFT) && direction != RIGHT) {
             direction = LEFT;
-        } else if (IsKeyDown(KEY_RIGHT)) {
+        } else if (IsKeyDown(KEY_RIGHT) && direction != LEFT) {
             direction = RIGHT;
         }
+
+        playerBody.front() = direction;
 
         // Movement change
         if (frameCounter % updateRate == 0) {
@@ -88,8 +106,16 @@ int main() {
             DrawLine(i * cellWidth, 0, i * cellWidth, screenHeight, gridColor);
         }
 
-        // Draw colored square
+        // Draw player
         DrawRectangle(playerX * cellWidth, playerY * cellHeight, cellWidth, cellHeight, squareColor);
+
+        if (playerX == foodX && playerY == foodY) {
+            playerBody.push_back(direction);
+            foodX = randomCol(gen);
+            foodY = randomRow(gen);
+        } else {
+            DrawRectangle(foodX * cellWidth, foodY * cellHeight, cellWidth, cellHeight, foodColor);
+        }
 
         // End double buffering
         EndDrawing();
