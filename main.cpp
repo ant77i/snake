@@ -1,7 +1,7 @@
 #include <raylib.h>
 #include <iostream>
 #include <random>
-#include <list>
+#include <vector>
 
 int main() {
     // Initialization
@@ -15,11 +15,10 @@ int main() {
     SetTargetFPS(60); // Set the desired frame rate (60 FPS)
 
     // Grid settings
-    const int cellWidth = 50;
-    const int cellHeight = 50;
-    const int cols = screenWidth / cellWidth;
-    const int rows = screenHeight / cellHeight;
-    const Color gridColor = DARKGRAY;
+    const int cellSize = 50;
+    const int COLS = screenWidth / cellSize;
+    const int ROWS = screenHeight / cellSize;
+    const Color GRIDCOLOR = DARKGRAY;
 
     // Random setup
     std::random_device rd;
@@ -31,12 +30,12 @@ int main() {
     int playerX = randomCol(gen);
     int playerY = randomRow(gen);
     const int updateRate = 20;
-    Color squareColor = GREEN;
+    Color PLAYERCOLOR = GREEN;
 
     // Food settings
     int foodX = randomCol(gen);
     int foodY = randomRow(gen);
-    Color foodColor = RED;
+    Color FOODCOLOR = RED;
 
     enum directions {
         NONE,
@@ -46,11 +45,48 @@ int main() {
         RIGHT,
     };
 
-    std::list<directions> playerBody;
-
     directions direction = NONE;
 
     int frameCounter = 0;
+
+    struct Segment {
+        int x, y;
+    };
+
+    class Snake {
+    public:
+        Snake(int startX, int startY, int initialLength) {
+            for (int i = 0; i < initialLength; ++i) {
+                body.push_back({startX - i, startY});
+            }
+        }
+
+        void move(int newX, int newY) {
+            // Update the position of each segment
+            for (int i = body.size() - 1; i > 0; --i) {
+                body[i] = body[i - 1];
+            }
+            body[0] = {newX, newY};
+        }
+
+        void grow() {
+            // Add a new segment at the end of the body
+            int lastX = body.back().x;
+            int lastY = body.back().y;
+            int newX = lastX + (lastX - body[body.size() - 2].x);
+            int newY = lastY + (lastY - body[body.size() - 2].y);
+            body.push_back({lastX, lastY});
+        }
+
+        const std::vector<Segment>& getBody() const {
+            return body;
+        }
+
+    private:
+        std::vector<Segment> body;
+    };
+
+    Snake snake(COLS/2, ROWS/2, 3);
 
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
@@ -66,8 +102,6 @@ int main() {
             direction = RIGHT;
         }
 
-        playerBody.front() = direction;
-
         // Movement change
         if (frameCounter % updateRate == 0) {
             switch (direction) {
@@ -76,7 +110,7 @@ int main() {
                     playerY--;
                     break;
                 case DOWN:
-                    if (playerY >= rows - 1) break;
+                    if (playerY >= ROWS - 1) break;
                     playerY++;
                     break;
                 case LEFT:
@@ -84,13 +118,15 @@ int main() {
                     playerX--;
                     break;
                 case RIGHT:
-                    if (playerX >= cols - 1) break;
+                    if (playerX >= COLS - 1) break;
                     playerX++;
                     break;
                 case NONE:
                     direction = NONE;
-            }
-        }
+            };
+        };
+
+        snake.move(playerX, playerY);
 
         // Begin double buffering
         BeginDrawing();
@@ -99,22 +135,25 @@ int main() {
         ClearBackground(RAYWHITE);
 
         // Draw grid lines
-        for (int i = 0; i <= rows; i++) {
-            DrawLine(0, i * cellHeight, screenWidth, i * cellHeight, gridColor);
-        }
-        for (int i = 0; i <= cols; i++) {
-            DrawLine(i * cellWidth, 0, i * cellWidth, screenHeight, gridColor);
-        }
+        for (int i = 0; i <= ROWS; i++) {
+            DrawLine(0, i * cellSize, screenWidth, i * cellSize, GRIDCOLOR);
+        };
+        for (int i = 0; i <= COLS; i++) {
+            DrawLine(i * cellSize, 0, i * cellSize, screenHeight, GRIDCOLOR);
+        };
 
         // Draw player
-        DrawRectangle(playerX * cellWidth, playerY * cellHeight, cellWidth, cellHeight, squareColor);
+        const std::vector<Segment>& snakeBody = snake.getBody();
+        for (const auto& segment: snakeBody) {
+            DrawRectangle(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize, PLAYERCOLOR);
+        };
 
         if (playerX == foodX && playerY == foodY) {
-            playerBody.push_back(direction);
+            snake.grow();
             foodX = randomCol(gen);
             foodY = randomRow(gen);
         } else {
-            DrawRectangle(foodX * cellWidth, foodY * cellHeight, cellWidth, cellHeight, foodColor);
+            DrawRectangle(foodX * cellSize, foodY * cellSize, cellSize, cellSize, FOODCOLOR);
         }
 
         // End double buffering
