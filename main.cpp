@@ -3,6 +3,16 @@
 #include <random>
 #include <vector>
 
+/*
+    TODO:
+    - collision
+    - fix going opposite direction
+    - add variable grid size
+    - add start and game over screen
+    - add score and high score
+    - pretty up graphics
+*/
+
 int main() {
     // Initialization
     const int screenWidth = 800;
@@ -27,8 +37,6 @@ int main() {
     std::uniform_int_distribution<> randomRow(0, 11);
 
     // Player settings
-    int playerX = randomCol(gen);
-    int playerY = randomRow(gen);
     const int updateRate = 20;
     Color PLAYERCOLOR = GREEN;
 
@@ -61,6 +69,7 @@ int main() {
             }
         }
 
+        
         void move(int newX, int newY) {
             // Update the position of each segment
             for (int i = body.size() - 1; i > 0; --i) {
@@ -68,13 +77,12 @@ int main() {
             }
             body[0] = {newX, newY};
         }
+        
 
         void grow() {
             // Add a new segment at the end of the body
             int lastX = body.back().x;
             int lastY = body.back().y;
-            int newX = lastX + (lastX - body[body.size() - 2].x);
-            int newY = lastY + (lastY - body[body.size() - 2].y);
             body.push_back({lastX, lastY});
         }
 
@@ -88,9 +96,13 @@ int main() {
 
     Snake snake(COLS/2, ROWS/2, 3);
 
+    const std::vector<Segment>& snakeBody = snake.getBody();
+    Segment moveTo = snakeBody.front();
+
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
+
         // Player movement
         if (IsKeyDown(KEY_UP) && direction != DOWN) {
             direction = UP;
@@ -102,31 +114,32 @@ int main() {
             direction = RIGHT;
         }
 
+
         // Movement change
         if (frameCounter % updateRate == 0) {
             switch (direction) {
                 case UP:
-                    if (playerY <= 0) break;
-                    playerY--;
+                    if (moveTo.y <= 0) break;
+                    moveTo.y--;
                     break;
                 case DOWN:
-                    if (playerY >= ROWS - 1) break;
-                    playerY++;
+                    if (moveTo.y >= ROWS - 1) break;
+                    moveTo.y++;
                     break;
                 case LEFT:
-                    if (playerX <= 0) break;
-                    playerX--;
+                    if (moveTo.x <= 0) break;
+                    moveTo.x--;
                     break;
                 case RIGHT:
-                    if (playerX >= COLS - 1) break;
-                    playerX++;
+                    if (moveTo.x >= COLS - 1) break;
+                    moveTo.x++;
                     break;
                 case NONE:
                     direction = NONE;
             };
+            snake.move(moveTo.x, moveTo.y);
         };
 
-        snake.move(playerX, playerY);
 
         // Begin double buffering
         BeginDrawing();
@@ -143,12 +156,11 @@ int main() {
         };
 
         // Draw player
-        const std::vector<Segment>& snakeBody = snake.getBody();
         for (const auto& segment: snakeBody) {
             DrawRectangle(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize, PLAYERCOLOR);
         };
 
-        if (playerX == foodX && playerY == foodY) {
+        if (moveTo.x == foodX && moveTo.y == foodY) {
             snake.grow();
             foodX = randomCol(gen);
             foodY = randomRow(gen);
