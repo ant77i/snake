@@ -59,6 +59,10 @@ int main() {
 
     struct Segment {
         int x, y;
+
+        bool operator==(const Segment& other) const {
+            return x == other.x && y == other.y;
+        };
     };
 
     class Snake {
@@ -155,9 +159,15 @@ int main() {
             DrawLine(i * cellSize, 0, i * cellSize, screenHeight, GRIDCOLOR);
         };
 
+        bool collison{false};
         // Draw player
         for (const auto& segment: snakeBody) {
-            DrawRectangle(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize, PLAYERCOLOR);
+            if (snakeBody[0] == segment) {
+                collison = true;
+            } else {
+                collison = false;
+            };
+            DrawRectangle(segment.x * cellSize + 5, segment.y * cellSize + 5, cellSize-10, cellSize-10, PLAYERCOLOR);
         };
 
         if (moveTo.x == foodX && moveTo.y == foodY) {
